@@ -1,4 +1,4 @@
-package org.bu.met
+package org.bu.met.types
 
 trait Color
 case object White extends Color

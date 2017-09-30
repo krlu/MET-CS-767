@@ -1,7 +1,8 @@
 package org.bu.met
 
+import org.bu.met.types._
+
 class ChessGame(var activePieces: Seq[(ChessPiece, (Int, Int))], var turn: Color){
-  val range = 0 to 7
   activePieces.foreach{case(_, (x, y)) =>
     require(range.contains(x) && range.contains(y))
   }
@@ -17,6 +18,10 @@ class ChessGame(var activePieces: Seq[(ChessPiece, (Int, Int))], var turn: Color
     val (selectedPiece, (oldX,oldY)) = piecesToMove.head
     val (newX, newY) = selectedPiece match {
       case k: Knight => KnightMoves(oldX,oldY, board, k.color).head
+      case p: Pawn =>
+        val newPos = PawnMoves(oldX,oldY, board, p.color).head
+        promotePawn(p, (oldX, oldY))
+        newPos
       case _ => KnightMoves(oldX,oldY, board, turn).head
     }
     if(board(newX)(newY).nonEmpty){
@@ -25,6 +30,22 @@ class ChessGame(var activePieces: Seq[(ChessPiece, (Int, Int))], var turn: Color
     }
     turn = if(turn.equals(White)) Black else White
     board
+  }
+
+  private def promotePawn(p: Pawn, position: (Int, Int)): Unit ={
+    def promotablePawn(y: Int, color: Color) =
+      (color == White && y == 7) || (color == Black && y == 0)
+    val (x,y) = position
+    if(promotablePawn(y, p.color)){
+      val possiblePieces = List(Knight, Queen).map(piece => piece(p.color))
+      val promotedPiece = possiblePieces.head
+      board(x)(y) = Some(promotedPiece)
+      activePieces = activePieces.filter{case( piece, pos) => piece match {
+        case p: Pawn => pos == (x,y)
+        case _ => false
+      }}
+      activePieces = activePieces :+ ((promotedPiece, (x,y)))
+    }
   }
   def printBoard(): Unit ={
     for{
