@@ -3,55 +3,71 @@ package org.bu.met
 import org.bu.met.types._
 
 class ChessGame(var activePieces: Seq[(ChessPiece, (Int, Int))], var turn: Color){
-  activePieces.foreach{case(_, (x, y)) =>
-    require(range.contains(x) && range.contains(y))
+  activePieces.foreach{case(_, (row, col)) =>
+    require(range.contains(row) && range.contains(col))
   }
 
-  val board: Array[Array[Option[ChessPiece]]] = {
-    val board: Array[Array[Option[ChessPiece]]] = Array.fill(8)(Array.fill(8)(None))
-    activePieces.foreach{case(piece, (x, y)) => board(x)(y) = Some(piece)}
+  val board: Board = {
+    val board: Board = Array.fill(8)(Array.fill(8)(None))
+    activePieces.foreach{case(piece, (row, col)) => board(col)(row) = Some(piece)}
     board
   }
 
+  // TODO: Default behavior uniformly selects piece and move
   def updateBoard(): Array[Array[Option[ChessPiece]]] = {
     val piecesToMove: Seq[(ChessPiece, (Int, Int))] = activePieces.filter{case(piece, _) => piece.color == turn}
-    val (selectedPiece, (oldX,oldY)) = piecesToMove.head
-    val (newX, newY) = selectedPiece match {
-      case k: Knight => KnightMoves(oldX,oldY, board, k.color).head
+    val (selectedPiece, (oldX,oldY)) = choose(piecesToMove.iterator)
+    val possibleMoves = selectedPiece match {
+      case k: Knight => KnightMoves(oldX,oldY, board, k.color)
+      case k: King => KingMoves(oldX,oldY, board, k.color)
+      case q: Queen => QueenMoves(oldX,oldY, board, q.color)
+      case b: Bishop => BishopMoves(oldX,oldY, board, b.color)
+      case r: Rook => RookMoves(oldX,oldY, board, r.color)
       case p: Pawn =>
-        val newPos = PawnMoves(oldX,oldY, board, p.color).head
+        val newPos = PawnMoves(oldX,oldY, board, p.color)
         promotePawn(p, (oldX, oldY))
         newPos
-      case _ => KnightMoves(oldX,oldY, board, turn).head
     }
+    val (newX, newY) = choose(possibleMoves.iterator)
     if(board(newX)(newY).nonEmpty){
-      activePieces = activePieces.filter{ case(_, (x,y)) => x != newX && y != newY}
+      activePieces = activePieces.filter{ case(_, (row,col)) => row != newX && col != newY}
       board(newX)(newY) = Some(selectedPiece)
     }
     turn = if(turn.equals(White)) Black else White
     board
   }
 
+  private def choose[A](it: Iterator[A]): A =
+    it.zip(Iterator.iterate(1)(_ + 1)).reduceLeft((row, col) =>
+      if (util.Random.nextInt(col._2) == 0) col else row
+    )._1
+
   private def promotePawn(p: Pawn, position: (Int, Int)): Unit ={
-    def promotablePawn(y: Int, color: Color) =
-      (color == White && y == 7) || (color == Black && y == 0)
-    val (x,y) = position
-    if(promotablePawn(y, p.color)){
+    def promotablePawn(col: Int, color: Color) =
+      (color == White && col == 7) || (color == Black && col == 0)
+    val (row,col) = position
+    if(promotablePawn(col, p.color)){
       val possiblePieces = List(Knight, Queen).map(piece => piece(p.color))
       val promotedPiece = possiblePieces.head
-      board(x)(y) = Some(promotedPiece)
+      board(row)(col) = Some(promotedPiece)
       activePieces = activePieces.filter{case( piece, pos) => piece match {
-        case p: Pawn => pos == (x,y)
+        case p: Pawn => pos == (row,col)
         case _ => false
       }}
-      activePieces = activePieces :+ ((promotedPiece, (x,y)))
+      activePieces = activePieces :+ ((promotedPiece, (row,col)))
     }
   }
+
   def printBoard(): Unit ={
-    for{
-      x <- range
-      y <- range.reverse
-    }println(board(y)(x))
+    for(row <- range){
+      println()
+      for(col <- range) {
+        board(row)(col) match {
+          case None => print("[           ]")
+          case Some(piece) => print(s"[$piece]")
+        }
+      }
+    }
   }
 }
 
