@@ -8,4 +8,6 @@ import org.bu.met.types.ChessPiece
 package object met {
   val range = 0 to 7
   type Board = Array[Array[Option[ChessPiece]]]
+  type Position = (Int, Int)
+  def toRowCol(x: Int, y: Int) = (range.max - y, x)
 }
