@@ -17,10 +17,10 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
   }
 
   // TODO: Default behavior uniformly selects piece and move
-  def updateBoard(): Board = {
+  def updateBoard(): Unit = {
     val piecesToMove: Seq[(ChessPiece, Position)] = activePieces.filter{case(piece, _) => piece.color == turn}
     val (selectedPiece, (oldX,oldY)) = choose(piecesToMove.iterator)
-    val possibleMoves = selectedPiece match {
+    val possibleMoves: Seq[Position] = selectedPiece match {
       case k: Knight => KnightMoves(oldX,oldY, board, k.color)
       case k: King => KingMoves(oldX,oldY, board, k.color)
       case q: Queen => QueenMoves(oldX,oldY, board, q.color)
@@ -34,11 +34,14 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
     val (newX, newY) = choose(possibleMoves.iterator)
     val (newRow, newCol) = toRowCol(newX, newY)
     val (oldRow, oldCol) = toRowCol(oldX, oldY)
-    activePieces = activePieces.filter{ case(_, (row,col)) => row != oldRow && col != oldCol}
+    activePieces = activePieces.filter{ case(_, (x,y)) => x != oldX || y != oldY}
+    if(board(newRow)(newCol).nonEmpty){
+      activePieces = activePieces.filter{ case(_, (x,y)) => x != newX || y != newY}
+    }
+    activePieces = activePieces :+ (selectedPiece, (newX, newY))
     board(newRow)(newCol) = Some(selectedPiece)
-//    board(oldRow)(oldCol) = None
+    board(oldRow)(oldCol) = None
     turn = if(turn.equals(White)) Black else White
-    board
   }
 
   // TODO: Placeholder for actual chess-bot

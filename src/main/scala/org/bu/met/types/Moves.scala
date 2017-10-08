@@ -9,14 +9,13 @@ object KingMoves extends Moves {
     val possibleMoves =
       Seq((x, y+1), (x, y-1),
           (x+1, y+1), (x+1, y), (x+1, y-1),
-          (x-1, y+1), (x-1, y), (x-1, y-1)).filter{case (a,b) =>
-        val range = 0 to 7
-        val edgeCondition = range.contains(a) && range.contains(b)
-        val pieceCondition = board(b)(a) match {
+          (x-1, y+1), (x-1, y), (x-1, y-1)
+      )
+      .filter{case (a,b) => range.contains(a) && range.contains(b)}
+      .filter{case (a,b) => board(b)(a) match {
           case Some(piece) => piece.color != color
           case _ => true
         }
-        edgeCondition && pieceCondition
       }
     possibleMoves
   }
@@ -27,8 +26,8 @@ object KnightMoves extends Moves {
     val possibleMoves =
       Seq((x+2, y+1), (x+2, y-1),
           (x+1, y+2), (x+1, y-2),
-          (x-1, y+2), (x+1, y-2),
-          (x-2, y+1), (x+2, y-1)).filter{case (a,b) =>
+          (x-1, y+2), (x-1, y-2),
+          (x-2, y+1), (x-2, y-1)).filter{case (a,b) =>
         val edgeCondition = range.contains(a) && range.contains(b)
         val pieceCondition = board(b)(a) match {
           case Some(piece) => piece.color != color
