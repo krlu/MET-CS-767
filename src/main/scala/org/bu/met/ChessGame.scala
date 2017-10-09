@@ -19,29 +19,35 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
   // TODO: Default behavior uniformly selects piece and move
   def updateBoard(): Unit = {
     val piecesToMove: Seq[(ChessPiece, Position)] = activePieces.filter{case(piece, _) => piece.color == turn}
-    val (selectedPiece, (oldX,oldY)) = choose(piecesToMove.iterator)
-    val possibleMoves: Seq[Position] = selectedPiece match {
-      case k: Knight => KnightMoves(oldX,oldY, board, k.color)
-      case k: King => KingMoves(oldX,oldY, board, k.color)
-      case q: Queen => QueenMoves(oldX,oldY, board, q.color)
-      case b: Bishop => BishopMoves(oldX,oldY, board, b.color)
-      case r: Rook => RookMoves(oldX,oldY, board, r.color)
-      case p: Pawn =>
-        val newPos = PawnMoves(oldX,oldY, board, p.color)
-        promotePawn(p, (oldX, oldY))
-        newPos
+    val kingOpt: Option[(ChessPiece, (Int, Int))] = piecesToMove.find{case (piece, _) => piece.isInstanceOf[King]}
+    val (selectedPiece, (oldX,oldY)) = kingOpt match {
+      case Some((king: King, (x,y))) =>
+        if(KingMoves.inCheck(x,y, board, turn)) (king, (x,y))
+        else choose(piecesToMove.iterator)
+      case _ => choose(piecesToMove.iterator)
     }
-    val (newX, newY) = choose(possibleMoves.iterator)
-    val (newRow, newCol) = toRowCol(newX, newY)
-    val (oldRow, oldCol) = toRowCol(oldX, oldY)
-    activePieces = activePieces.filter{ case(_, (x,y)) => x != oldX || y != oldY}
-    if(board(newRow)(newCol).nonEmpty){
-      activePieces = activePieces.filter{ case(_, (x,y)) => x != newX || y != newY}
+
+    val possibleMoves: Seq[Position] = getMovesForPiece(selectedPiece, oldX, oldY, board)
+    turn = if (turn.equals(White)) Black else White
+    if(possibleMoves.nonEmpty) {
+      val (newX, newY) = choose(possibleMoves.iterator)
+      val (newRow, newCol) = toRowCol(newX, newY)
+      val (oldRow, oldCol) = toRowCol(oldX, oldY)
+      activePieces = activePieces.filter { case (_, (x, y)) => x != oldX || y != oldY }
+      if (board(newRow)(newCol).nonEmpty) {
+        activePieces = activePieces.filter { case (_, (x, y)) => x != newX || y != newY }
+      }
+      selectedPiece match {
+        case p: Pawn => attemptPromotePawn(p, (oldX, oldY))
+        case _ =>
+      }
+      activePieces = activePieces :+(selectedPiece, (newX, newY))
+      board(newRow)(newCol) = Some(selectedPiece)
+      board(oldRow)(oldCol) = None
     }
-    activePieces = activePieces :+ (selectedPiece, (newX, newY))
-    board(newRow)(newCol) = Some(selectedPiece)
-    board(oldRow)(oldCol) = None
-    turn = if(turn.equals(White)) Black else White
+    else{
+      println(s"$turn wins!!!")
+    }
   }
 
   // TODO: Placeholder for actual chess-bot
@@ -50,7 +56,7 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
       if (util.Random.nextInt(col._2) == 0) col else row
     )._1
 
-  private def promotePawn(p: Pawn, position: Position): Unit ={
+  private def attemptPromotePawn(p: Pawn, position: Position): Unit ={
     def promotablePawn(col: Int, color: Color) =
       (color == White && col == 7) || (color == Black && col == 0)
     val (row,col) = position
@@ -76,15 +82,5 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
         }
       }
     }
-  }
-}
-
-object Test{
-  def main(args: Array[String]): Unit = {
-    val game = new ChessGame(Seq((Queen(Black), (5,5))), Black)
-    game.printBoard()
-    game.updateBoard()
-    println("\n------------------------------------------------------")
-    game.printBoard()
   }
 }

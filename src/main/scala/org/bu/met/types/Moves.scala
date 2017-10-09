@@ -2,6 +2,8 @@ package org.bu.met.types
 
 import org.bu.met._
 
+import scala.collection.immutable.IndexedSeq
+
 trait Moves extends ((Int, Int, Array[Array[Option[ChessPiece]]], Color) => Seq[Position])
 
 object KingMoves extends Moves {
@@ -11,13 +13,28 @@ object KingMoves extends Moves {
           (x+1, y+1), (x+1, y), (x+1, y-1),
           (x-1, y+1), (x-1, y), (x-1, y-1)
       )
-      .filter{case (a,b) => range.contains(a) && range.contains(b)}
+      .filter{case (a,b) => range.contains(a) && range.contains(b) && !inCheck(a,b, board, color)}
       .filter{case (a,b) => board(b)(a) match {
           case Some(piece) => piece.color != color
           case _ => true
         }
       }
     possibleMoves
+  }
+  // if the opponent can move a piece onto (x,y) then the king would be in check at (x,y)
+  def inCheck(x: Int, y: Int, board: Board, color: Color): Boolean ={
+    val opposingColor = if(color == White) Black else White
+    val possibleMoves: IndexedSeq[(Int, Int)] = (for {
+      i <- range
+      j <- range
+    } yield {
+      (board(i)(j), toXY(i, j))
+    }).filter{case (option, _) => option.nonEmpty}
+      .filter{case (option, _) => option.get.color == opposingColor}
+      .flatMap{ case(pieceOpt, (a,b)) => {
+      getMovesForPiece(pieceOpt.get, a,b, board)
+    }}
+    possibleMoves.contains((x,y))
   }
 }
 
@@ -43,20 +60,23 @@ object PawnMoves extends Moves {
   override def apply(x: Int, y: Int, board: Array[Array[Option[ChessPiece]]],color: Color): Seq[Position] = {
     val yChange = colorValue(color,1)
     val possibleMoves: Seq[Position] = Seq((x, y+yChange)).filter{case (a,b) =>
-      val pieceCondition = board(a)(b) match {
-        case Some(piece) => piece.color != color
+      val (r,c) = toRowCol(a,b)
+      val pieceCondition = board(r)(c) match {
+        case Some(piece) => false
         case _ => true
       }
       pieceCondition && range.contains(y+yChange)
     }
     val upRight = if(range.contains(x+1) && range.contains(y+yChange)){
-      board(x+1)(y+1) match {
-        case Some(piece) => if(piece.color != color) Seq((x-1,y+yChange)) else Seq()
+      val (r,c) = toRowCol(x+1, y+yChange)
+      board(r)(c) match {
+        case Some(piece) => if(piece.color != color) Seq((x+1,y+yChange)) else Seq()
         case _ => Seq()
       }
     } else Seq()
     val upLeft = if(range.contains(x-1) && range.contains(y+yChange)){
-      board(x-1)(y+1) match {
+      val (r,c) = toRowCol(x-1, y+yChange)
+      board(r)(c) match {
         case Some(piece) => if(piece.color != color) Seq((x-1, y+yChange)) else Seq()
         case _ => Seq()
       }
