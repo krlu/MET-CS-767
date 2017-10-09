@@ -2,6 +2,8 @@ package org.bu
 
 import org.bu.met.types.{Pawn, PawnMoves, RookMoves, _}
 
+import scala.collection.immutable.IndexedSeq
+
 /**
   * Created by Kenneth on 9/30/2017.
   */
@@ -9,6 +11,7 @@ package object met {
   val range = 0 to 7
   type Board = Array[Array[Option[ChessPiece]]]
   type Position = (Int, Int)
+
   def toRowCol(x: Int, y: Int) = (range.max - y, x)
   def toXY(row: Int, col: Int) = (col, range.max - row)
   
@@ -21,5 +24,21 @@ package object met {
     case p: Pawn =>
       val newPos = PawnMoves(x,y, board, p.color)
       newPos
+  }
+
+  // if the opponent can move a piece onto (x,y) then the king would be in check at (x,y)
+  def inCheck(x: Int, y: Int, board: Board, color: Color): Boolean ={
+    val opposingColor = if(color == White) Black else White
+    val possibleMoves: IndexedSeq[(Int, Int)] = (for {
+      i: Int <- 0 to 7
+      j: Int <- 0 to 7
+    } yield {
+      (board(i)(j), toXY(i, j))
+    }).filter{case (option, _) => option.nonEmpty}
+      .filter{case (option, _) => option.get.color == opposingColor}
+      .flatMap{ case(pieceOpt, (a,b)) =>
+        getMovesForPiece(pieceOpt.get, a,b, board)
+      }
+    possibleMoves.contains((x,y))
   }
 }

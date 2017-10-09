@@ -94,13 +94,19 @@ class ChessGameTest extends FlatSpec with Matchers {
       assert(movedCorrectly(possibleMoves, game.board, King(Black)))
     }
 
-    for (_ <- 0 to 100) {
-      val game = new ChessGame(Seq((King(Black), (7, 7))), Black)
-      val possibleMoves = KingMoves(7, 7, game.board, Black)
-      assert(possibleMoves == Seq((7,6), (6,7), (6,6)))
-      game.updateBoard()
-      assert(movedCorrectly(possibleMoves, game.board, King(Black)))
-    }
+    val game = new ChessGame(Seq((King(Black), (7, 7))), Black)
+    val possibleMoves = KingMoves(7, 7, game.board, Black)
+    assert(possibleMoves == Seq((7,6), (6,7), (6,6)))
+    game.updateBoard()
+    assert(movedCorrectly(possibleMoves, game.board, King(Black)))
+
+  }
+
+  "Chess Game" should "checkmate king" in {
+    val game = new ChessGame(Seq((King(Black), (7, 7)),(Rook(White), (7, 5)), (King(White), (5, 6))), Black)
+    val possibleMoves = KingMoves(7, 7, game.board, Black).filter{case (x,y) => !inCheck(x,y, game.board, Black)}
+    assert(possibleMoves == Seq())
+    game.updateBoard()
   }
 
   "Chess Game" should "move pawns" in {
@@ -118,6 +124,10 @@ class ChessGameTest extends FlatSpec with Matchers {
     assert(possibleWhiteMoves == Seq((4,5), (5,5)))
     game.updateBoard()
 
+    val game2 = new ChessGame(Seq((Pawn(Black), (5, 5)), (Pawn(White), (5, 4))), Black)
+    val possibleMoves = PawnMoves(5, 5, game2.board, Black)
+    assert(possibleMoves == Seq())
+    game2.updateBoard()
   }
 
 

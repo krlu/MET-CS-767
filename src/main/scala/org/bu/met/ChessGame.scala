@@ -22,12 +22,13 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
     val kingOpt: Option[(ChessPiece, (Int, Int))] = piecesToMove.find{case (piece, _) => piece.isInstanceOf[King]}
     val (selectedPiece, (oldX,oldY)) = kingOpt match {
       case Some((king: King, (x,y))) =>
-        if(KingMoves.inCheck(x,y, board, turn)) (king, (x,y))
+        if(inCheck(x,y, board, turn)) (king, (x,y))
         else choose(piecesToMove.iterator)
       case _ => choose(piecesToMove.iterator)
     }
 
-    val possibleMoves: Seq[Position] = getMovesForPiece(selectedPiece, oldX, oldY, board)
+    val possibleMoves: Seq[Position] =
+      getMovesForPiece(selectedPiece, oldX, oldY, board).filter{case (a,b) => !inCheck(a,b, board, turn)}
     turn = if (turn.equals(White)) Black else White
     if(possibleMoves.nonEmpty) {
       val (newX, newY) = choose(possibleMoves.iterator)
