@@ -26,7 +26,6 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
         else choose(piecesToMove.iterator)
       case _ => choose(piecesToMove.iterator)
     }
-
     val possibleMoves: Seq[Position] =
       getMovesForPiece(selectedPiece, oldX, oldY, board).filter{case (a,b) => !inCheck(a,b, board, turn)}
     turn = if (turn.equals(White)) Black else White
@@ -35,9 +34,8 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
       val (newRow, newCol) = toRowCol(newX, newY)
       val (oldRow, oldCol) = toRowCol(oldX, oldY)
       activePieces = activePieces.filter { case (_, (x, y)) => x != oldX || y != oldY }
-      if (board(newRow)(newCol).nonEmpty) {
+      if (board(newRow)(newCol).nonEmpty)
         activePieces = activePieces.filter { case (_, (x, y)) => x != newX || y != newY }
-      }
       selectedPiece match {
         case p: Pawn => attemptPromotePawn(p, (oldX, oldY))
         case _ =>
