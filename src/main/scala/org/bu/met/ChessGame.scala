@@ -20,15 +20,17 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
   def updateBoard(): Unit = {
     val piecesToMove: Seq[(ChessPiece, Position)] = activePieces.filter{case(piece, _) => piece.color == turn}
     val kingOpt: Option[(ChessPiece, (Int, Int))] = piecesToMove.find{case (piece, _) => piece.isInstanceOf[King]}
+    var kingInCheck = false
     val (selectedPiece, (oldX,oldY)) = kingOpt match {
       case Some((king: King, (x,y))) =>
-        if(inCheck(x,y, board, turn)) (king, (x,y))
+        kingInCheck = inCheck(x,y, board, turn)
+        if(kingInCheck) (king, (x,y))
         else choose(piecesToMove.iterator)
       case _ => choose(piecesToMove.iterator)
     }
     val possibleMoves: Seq[Position] =
       getMovesForPiece(selectedPiece, oldX, oldY, board).filter{case (a,b) => !inCheck(a,b, board, turn)}
-    turn = if (turn.equals(White)) Black else White
+    turn = if (turn.equals(White)) Black else White // switch turns
     if(possibleMoves.nonEmpty) {
       val (newX, newY) = choose(possibleMoves.iterator)
       val (newRow, newCol) = toRowCol(newX, newY)
@@ -44,9 +46,8 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
       board(newRow)(newCol) = Some(selectedPiece)
       board(oldRow)(oldCol) = None
     }
-    else{
-      println(s"$turn wins!!!")
-    }
+    else if(kingInCheck) println(s"$turn wins!!!")
+    else println(s"stalemate, $turn cannot move.")
   }
 
   // TODO: Placeholder for actual chess-bot

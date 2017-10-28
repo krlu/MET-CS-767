@@ -56,6 +56,19 @@ class ChessGameTest extends FlatSpec with Matchers {
       val bishopMoved = movedCorrectly(pawnMoves, game.board, Pawn(Black))
       assert(pawnMoved || bishopMoved)
     }
+    for(_ <- 0 to 100){
+      val game = new ChessGame(Seq((Bishop(Black), (5, 5)), (Pawn(White), (4,4))), Black)
+      val bishopMoves = BishopMoves(5, 5, game.board, Black)
+      assert(bishopMoves ==
+        List(
+          (6, 4), (7, 3),
+          (4, 4), (6, 6),
+          (7, 7), (4, 6),
+          (3, 7))
+      )
+      game.updateBoard()
+      assert(movedCorrectly(bishopMoves, game.board, Bishop(Black)))
+    }
   }
 
   "Chess Game" should "move rooks" in {

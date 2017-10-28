@@ -26,7 +26,7 @@ package object met {
       newPos
   }
 
-  // if the opponent can move a piece onto (x,y) then the king would be in check at (x,y)
+  // checks if the king (of given color) would be in check if it were at position (x,y)
   def inCheck(x: Int, y: Int, board: Board, color: Color): Boolean ={
     val opposingColor = if(color == White) Black else White
     val possibleMoves: IndexedSeq[(Int, Int)] = (for {
