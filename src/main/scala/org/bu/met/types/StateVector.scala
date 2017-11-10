@@ -1,5 +1,7 @@
 package org.bu.met.types
 
+import org.bu.met._
+
 ///**
 //  * @param turn - 1 for white 0 for black
 //  */
@@ -37,7 +39,24 @@ package org.bu.met.types
 //                       blackPawn8: PieceState, // 31
 //                       turn: Int)
 
+sealed case class StateVector(elements: Seq[Int]){
+  override def toString = elements.mkString(",")
+}
 
+object StateVector{
+  def apply(moveVectorOpt: Option[MoveVector],
+            activePieces: Seq[(ChessPiece, Position)],
+            turn: Color): Option[StateVector] = moveVectorOpt match {
+    case Some(mv) =>
+      val turnInt = if(turn == Black) 0 else 1
+      val statesArray = Array.fill(32)(PieceState(1,0,0))
+      activePieces.foreach{ case(piece,(x,y)) =>
+        statesArray(piece.stateVectorIndex) = PieceState(0,x,y)
+      }
+      Some(StateVector(statesArray.toSeq.flatMap{ ps => Seq(ps.taken, ps.xPos, ps.yPos)} ++ Seq(turnInt)))
+    case None => None
+  }
+}
 
 /**
   * @param taken - 1 for true 0 for false
@@ -47,5 +66,5 @@ package org.bu.met.types
 case class PieceState(taken: Int, xPos: Int, yPos: Int)
 
 case class MoveVector(stateVectorIndex: Int, desiredPosX: Int, desiredPosY: Int){
-  override def toString = s"$stateVectorIndex, $desiredPosX, $desiredPosY"
+  override def toString = s"$stateVectorIndex,$desiredPosX,$desiredPosY"
 }
