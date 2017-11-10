@@ -10,7 +10,7 @@ import scala.collection.immutable.IndexedSeq
 package object met {
   val range = 0 to 7
   type Board = Array[Array[Option[ChessPiece]]]
-  type Position = (Int, Int)
+  type Position = (Int, Int) // (x,y) cartesian, NOT row/col!!!!!!
 
   def toRowCol(x: Int, y: Int) = (range.max - y, x)
   def toXY(row: Int, col: Int) = (col, range.max - row)

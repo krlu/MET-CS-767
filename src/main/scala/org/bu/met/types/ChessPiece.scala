@@ -6,11 +6,12 @@ case object Black extends Color
 
 trait ChessPiece{
   val color: Color
+  val stateVectorIndex: Int
 }
 
-case class Pawn(override val color: Color) extends ChessPiece
-case class Knight(override val color: Color) extends ChessPiece
-case class Bishop(override val color: Color) extends ChessPiece
-case class Rook(override val color: Color) extends ChessPiece
-case class Queen(override val color: Color) extends ChessPiece
-case class King(override val color: Color) extends ChessPiece
+case class Pawn(color: Color, stateVectorIndex: Int) extends ChessPiece
+case class Knight(color: Color, stateVectorIndex: Int) extends ChessPiece
+case class Bishop(color: Color, stateVectorIndex: Int) extends ChessPiece
+case class Rook(color: Color, stateVectorIndex: Int) extends ChessPiece
+case class Queen(color: Color, stateVectorIndex: Int) extends ChessPiece
+case class King(color: Color, stateVectorIndex: Int) extends ChessPiece

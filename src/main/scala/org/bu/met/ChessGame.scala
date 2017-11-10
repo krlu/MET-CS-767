@@ -1,5 +1,7 @@
 package org.bu.met
 
+import java.io.{File, PrintWriter}
+
 import org.bu.met.types._
 
 class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
@@ -26,13 +28,17 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
         kingInCheck = inCheck(x,y, board, turn)
         if(kingInCheck) (king, (x,y))
         else choose(piecesToMove.iterator)
+      // in some test cases there are no kings, but this wouldn't be realistic
       case _ => choose(piecesToMove.iterator)
     }
+    var moveVector: Option[MoveVector] = None
     val possibleMoves: Seq[Position] =
       getMovesForPiece(selectedPiece, oldX, oldY, board).filter{case (a,b) => !inCheck(a,b, board, turn)}
     turn = if (turn.equals(White)) Black else White // switch turns
     if(possibleMoves.nonEmpty) {
       val (newX, newY) = choose(possibleMoves.iterator)
+
+      moveVector = Some(MoveVector(selectedPiece.stateVectorIndex, newX, newY))
       val (newRow, newCol) = toRowCol(newX, newY)
       val (oldRow, oldCol) = toRowCol(oldX, oldY)
       activePieces = activePieces.filter { case (_, (x, y)) => x != oldX || y != oldY }
@@ -46,7 +52,24 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
       board(newRow)(newCol) = Some(selectedPiece)
       board(oldRow)(oldCol) = None
     }
-    else if(kingInCheck) println(s"$turn wins!!!")
+    else if(kingInCheck){
+      // TODO: save move vector and state vector!!
+      moveVector match {
+        case Some(mv) =>
+          val turnInt = if(turn == Black) 0 else 1
+          val statesArray = Array.fill(32)(PieceState(1,0,0))
+          activePieces.foreach{ case(piece,(x,y)) =>
+            statesArray(piece.stateVectorIndex) = PieceState(0,x,y)
+          }
+          val stateVector: Seq[Int] = statesArray.toSeq.flatMap{ ps =>
+            Seq(ps.taken, ps.xPos, ps.yPos)
+          } ++ Seq(turnInt)
+          val printWriter = new PrintWriter(new File("training_data.csv"))
+          printWriter.append(stateVector.mkString(",") + s",${mv.toString}\n")
+        case None =>
+      }
+      println(s"$turn wins!!!")
+    }
     else println(s"stalemate, $turn cannot move.")
   }
 
@@ -60,9 +83,10 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
     def promotablePawn(col: Int, color: Color) =
       (color == White && col == 7) || (color == Black && col == 0)
     val (row,col) = position
+
     if(promotablePawn(col, p.color)){
-      val possiblePieces = List(Knight, Queen).map(piece => piece(p.color))
-      val promotedPiece = possiblePieces.head
+      val possiblePieces = List(Knight(p.color, p.stateVectorIndex), Queen(p.color, p.stateVectorIndex))
+      val promotedPiece = choose(possiblePieces.iterator)
       board(row)(col) = Some(promotedPiece)
       activePieces = activePieces.filter{case( piece, pos) => piece match {
         case p: Pawn => pos == (row,col)

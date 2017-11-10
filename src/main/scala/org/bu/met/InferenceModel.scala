@@ -8,13 +8,13 @@ import shapeless._
 
 object InferenceModel {
   def main(args: Array[String]) = {
-    implicit val wp = neuroflow.core.WeightProvider.Double.FFN.normal {
+
+    implicit val wp = WeightProvider.Double.FFN.normal {
       Map(// normal config per weight layer
         0 ->(0.1, 0.1),
         1 ->(0.1, 0.1)
       )
     }
-    val fn = Tanh
 
     // training data
     val trainingInput = Seq(->(0.0, 0.0), ->(0.0, 1.0), ->(1.0, 0.0), ->(1.0, 1.0))
@@ -25,7 +25,8 @@ object InferenceModel {
       },
       iterations = 10000, verbose = false
     )
-    val net = Network(Input(2) :: Dense(10, fn) :: Output(1, fn) :: HNil, settings)
+    val fn = Tanh
+    val net = Network(Input(2) :: Dense(129,fn) :: Output(1, fn) :: HNil, settings)
     net.train(trainingInput, trainingOutput)
 
     val a: _root_.neuroflow.core.Network.Vector[Double] = net.evaluate(->(0.0, 0.0))
@@ -34,7 +35,7 @@ object InferenceModel {
     val d = net.evaluate(->(1.0, 1.0))
 
     println(s"Input: 0.0, 0.0   Output: $a")
-    println(s"Input: 0.0, 1.0   Output: ${b.data.toList.head}")
+    println(s"Input: 0.0, 1.0   Output: $b")
     println(s"Input: 1.0, 0.0   Output: $c")
     println(s"Input: 1.0, 1.0   Output: $d")
 
