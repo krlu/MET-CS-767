@@ -1,10 +1,14 @@
 package org.bu.met
 
-import java.io.{File, PrintWriter}
+import java.io.FileWriter
 
 import org.bu.met.types._
 
 class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
+
+  private var moveVectorOpt: Option[MoveVector] = None
+  private var stateVectorOpt: Option[Seq[Int]] = None
+
   activePieces.foreach{case(_, (row, col)) =>
     require(range.contains(row) && range.contains(col))
   }
@@ -18,7 +22,6 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
     board
   }
 
-  // TODO: Default behavior uniformly selects piece and move
   def updateBoard(): Unit = {
     val piecesToMove: Seq[(ChessPiece, Position)] = activePieces.filter{case(piece, _) => piece.color == turn}
     val kingOpt: Option[(ChessPiece, (Int, Int))] = piecesToMove.find{case (piece, _) => piece.isInstanceOf[King]}
@@ -31,14 +34,12 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
       // in some test cases there are no kings, but this wouldn't be realistic
       case _ => choose(piecesToMove.iterator)
     }
-    var moveVector: Option[MoveVector] = None
     val possibleMoves: Seq[Position] =
       getMovesForPiece(selectedPiece, oldX, oldY, board).filter{case (a,b) => !inCheck(a,b, board, turn)}
     turn = if (turn.equals(White)) Black else White // switch turns
     if(possibleMoves.nonEmpty) {
       val (newX, newY) = choose(possibleMoves.iterator)
-
-      moveVector = Some(MoveVector(selectedPiece.stateVectorIndex, newX, newY))
+      moveVectorOpt = Some(MoveVector(selectedPiece.stateVectorIndex, newX, newY))
       val (newRow, newCol) = toRowCol(newX, newY)
       val (oldRow, oldCol) = toRowCol(oldX, oldY)
       activePieces = activePieces.filter { case (_, (x, y)) => x != oldX || y != oldY }
@@ -51,29 +52,37 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
       activePieces = activePieces :+(selectedPiece, (newX, newY))
       board(newRow)(newCol) = Some(selectedPiece)
       board(oldRow)(oldCol) = None
+      stateVectorOpt = generateStateVector(moveVectorOpt)
     }
     else if(kingInCheck){
-      // TODO: save move vector and state vector!!
-      moveVector match {
-        case Some(mv) =>
-          val turnInt = if(turn == Black) 0 else 1
-          val statesArray = Array.fill(32)(PieceState(1,0,0))
-          activePieces.foreach{ case(piece,(x,y)) =>
-            statesArray(piece.stateVectorIndex) = PieceState(0,x,y)
-          }
-          val stateVector: Seq[Int] = statesArray.toSeq.flatMap{ ps =>
-            Seq(ps.taken, ps.xPos, ps.yPos)
-          } ++ Seq(turnInt)
-          val printWriter = new PrintWriter(new File("training_data.csv"))
-          printWriter.append(stateVector.mkString(",") + s",${mv.toString}\n")
-        case None =>
-      }
+      saveMoveAndState(moveVectorOpt, stateVectorOpt)
       println(s"$turn wins!!!")
     }
     else println(s"stalemate, $turn cannot move.")
   }
 
-  // TODO: Placeholder for actual chess-bot
+  private def saveMoveAndState(moveVectorOpt: Option[MoveVector], stateVectorOpt: Option[Seq[Int]]): Unit ={
+    (stateVectorOpt, moveVectorOpt) match {
+      case (Some(sv), Some(mv)) =>
+        val fw = new FileWriter("training_data.csv")
+        fw.write(sv.mkString(",") + s",${mv.toString}")
+        fw.close()
+      case _ =>
+    }
+  }
+
+  private def generateStateVector(moveVectorOpt: Option[MoveVector]) = moveVectorOpt match {
+    case Some(mv) =>
+      val turnInt = if(turn == Black) 0 else 1
+      val statesArray = Array.fill(32)(PieceState(1,0,0))
+      activePieces.foreach{ case(piece,(x,y)) =>
+        statesArray(piece.stateVectorIndex) = PieceState(0,x,y)
+      }
+      Some(statesArray.toSeq.flatMap{ ps => Seq(ps.taken, ps.xPos, ps.yPos)} ++ Seq(turnInt))
+    case None => None
+  }
+
+  // TODO: Placeholder for actual chess-bot, used to generate initial training data
   private def choose[A](it: Iterator[A]): A =
     it.zip(Iterator.iterate(1)(_ + 1)).reduceLeft((row, col) =>
       if (util.Random.nextInt(col._2) == 0) col else row
