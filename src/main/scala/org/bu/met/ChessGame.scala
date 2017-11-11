@@ -8,7 +8,7 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
 
   // training data we shall save in csv form
   private var moveVectorOpt: Option[MoveVector] = None
-  private var stateVectorOpt: Option[StateVector] = None
+  private var stateVectorOpt: Option[Vector] = None
   private var gameOver: Boolean = false
 
   activePieces.foreach{case(_, (row, col)) =>
@@ -59,7 +59,7 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
       activePieces = activePieces :+(selectedPiece, (newX, newY))
       board(newRow)(newCol) = Some(selectedPiece)
       board(oldRow)(oldCol) = None
-      stateVectorOpt = generateStateVector()
+      stateVectorOpt = Some(StateVector(activePieces, turn))
     }
     else if(kingInCheck){
       gameOver = true
@@ -69,7 +69,7 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
     else println(s"stalemate, $turn cannot move.")
   }
 
-  private def saveMoveAndState(moveVectorOpt: Option[MoveVector], stateVectorOpt: Option[StateVector]): Unit ={
+  private def saveMoveAndState(moveVectorOpt: Option[MoveVector], stateVectorOpt: Option[Vector]): Unit ={
     (stateVectorOpt, moveVectorOpt) match {
       case (Some(sv), Some(mv)) =>
         val fw = new FileWriter("training_data.csv", true)
@@ -77,15 +77,6 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
         fw.close()
       case _ =>
     }
-  }
-
-  private def generateStateVector(): Option[StateVector] = {
-    val turnInt = if(turn == Black) 0 else 1
-    val statesArray = Array.fill(32)(PieceState(1,0,0))
-    activePieces.foreach{ case(piece,(x,y)) =>
-      statesArray(piece.stateVectorIndex) = PieceState(0,x,y)
-    }
-    Some(StateVector(statesArray.toSeq.flatMap{ ps => Seq(ps.taken, ps.xPos, ps.yPos)} ++ Seq(turnInt)))
   }
 
   // TODO: Placeholder for actual chess-bot, used to generate initial training data
