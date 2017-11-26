@@ -44,6 +44,7 @@ object PawnMoves extends Moves {
     val yChange = colorValue(color,1)
     val possibleMoves: Seq[Position] = Seq((x, y+yChange)).filter{case (a,b) =>
       val (r,c) = toRowCol(a,b)
+      println(r,c)
       val pieceCondition = board(r)(c) match {
         case Some(piece) => false
         case _ => true

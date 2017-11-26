@@ -30,6 +30,8 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
   }
 
   def updateBoard(): Unit = {
+    // save previous state
+    stateVectorOpt = Some(StateVector(activePieces, turn))
     val piecesToMove: Seq[(ChessPiece, Position)] = activePieces.filter{case(piece, _) => piece.color == turn}
     val kingOpt: Option[(ChessPiece, (Int, Int))] = piecesToMove.find{case (piece, _) => piece.isInstanceOf[King]}
     var kingInCheck = false
@@ -41,8 +43,8 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
       // in some test cases there are no kings, but this wouldn't be realistic
       case _ => choose(piecesToMove.iterator)
     }
-    val possibleMoves: Seq[Position] =
-      getMovesForPiece(selectedPiece, oldX, oldY, board).filter{case (a,b) => !inCheck(a,b, board, turn)}
+    println("hi")
+    val possibleMoves: Seq[Position] = getMovesForPiece(selectedPiece, oldX, oldY, board).filter{case (a,b) => !inCheck(a,b, board, turn)}
     turn = if (turn.equals(White)) Black else White // switch turns
     if(possibleMoves.nonEmpty) {
       val (newX, newY) = choose(possibleMoves.iterator)
@@ -59,7 +61,6 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
       activePieces = activePieces :+(selectedPiece, (newX, newY))
       board(newRow)(newCol) = Some(selectedPiece)
       board(oldRow)(oldCol) = None
-      stateVectorOpt = Some(StateVector(activePieces, turn))
     }
     else if(kingInCheck){
       gameOver = true
