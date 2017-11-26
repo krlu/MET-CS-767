@@ -14,8 +14,8 @@ object InferenceModel {
 
     implicit val wp = WeightProvider.Double.FFN.normal {
       Map(// normal config per weight layer
-        0 ->(0.1, 0.1),
-        1 ->(0.1, 0.1)
+        0 ->(1.1, 0.1),
+        1 ->(1.1, 0.1)
       )
     }
 
@@ -23,12 +23,12 @@ object InferenceModel {
     val (trainingInput, trainingOutput) = setupTrainingData("training_data.csv")
     val settings = Settings[Double](
       learningRate = {
-        case (_, _) => 1.0
+        case (_, _) => 0.001
       },
-      iterations = 10000, verbose = false
+      iterations = 100000, verbose = false
     )
-    val fn = Tanh
-    val net = Network(Input(97) :: Dense(97, fn) ::Output(3, fn) :: HNil, settings)
+    val fn = Linear
+    val net = Network(Input(97) :: Output(3, fn) :: HNil, settings)
 
     println("training....")
     val t1 = System.currentTimeMillis()
@@ -37,7 +37,8 @@ object InferenceModel {
     println(s"training completed in ${(t2 - t1)/1000.0} seconds")
     trainingInput.foreach{ input =>
       val a = net.evaluate(input)
-      println(s"Input: $input  Output: $a")
+      println(s"Input: $input")
+      println(s"Output: $a")
     }
 //    println("Network was: " + net)
   }

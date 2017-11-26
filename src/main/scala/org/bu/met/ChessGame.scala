@@ -43,11 +43,11 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
       // in some test cases there are no kings, but this wouldn't be realistic
       case _ => choose(piecesToMove.iterator)
     }
-    println("hi")
     val possibleMoves: Seq[Position] = getMovesForPiece(selectedPiece, oldX, oldY, board).filter{case (a,b) => !inCheck(a,b, board, turn)}
     turn = if (turn.equals(White)) Black else White // switch turns
     if(possibleMoves.nonEmpty) {
       val (newX, newY) = choose(possibleMoves.iterator)
+      println(newX, newY, selectedPiece)
       moveVectorOpt = Some(MoveVector(selectedPiece.stateVectorIndex, newX, newY))
       val (newRow, newCol) = toRowCol(newX, newY)
       val (oldRow, oldCol) = toRowCol(oldX, oldY)
