@@ -19,9 +19,7 @@ package object met {
     case q: Queen => QueenMoves(x,y, board, q.color)
     case b: Bishop => BishopMoves(x,y, board, b.color)
     case r: Rook => RookMoves(x,y, board, r.color)
-    case p: Pawn =>
-      val newPos = PawnMoves(x,y, board, p.color)
-      newPos
+    case p: Pawn => PawnMoves(x,y, board, p.color)
   }
 
   // checks if the king (of given color) would be in check if it were at position (x,y)

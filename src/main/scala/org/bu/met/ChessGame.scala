@@ -11,7 +11,7 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
   private var stateVectorOpt: Option[Vector] = None
   private var gameOver: Boolean = false
 //  val model = new InferenceModel
-//  model.train("training_data.csv")
+//  model.train("old_training_data.csv")
 
   activePieces.foreach{case(_, (row, col)) =>
     require(range.contains(row) && range.contains(col))
@@ -37,9 +37,10 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
   def updateBoard(): Unit = {
 
     val piecesToMove: Seq[(ChessPiece, Position)] = activePieces.filter{case(piece, _) => piece.color == turn}
+    println(s"Game State: $activePieces, $turn")
 //    if(activePieces.count { case (piece, _) => piece.isInstanceOf[King] } != 2)
 //      throw new IllegalStateException("Must have 2 kings!!!")
-//    model.computeMoveVector(StateVector(activePieces, turn))
+//    val moveVector: MoveVector = model.computeMoveVector(StateVector(activePieces, turn))
 
     val kingOpt: Option[(ChessPiece, (Int, Int))] = piecesToMove.find{case (piece, _) => piece.isInstanceOf[King]}
     var kingInCheck = false
@@ -74,7 +75,6 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
       val (newX, newY) = choose(possibleMoves.iterator)
       stateVectorOpt = Some(newState)
       moveVectorOpt = Some(MoveVector(selectedPiece.stateVectorIndex, newX, newY))
-
       val (newRow, newCol) = toRowCol(newX, newY)
       val (oldRow, oldCol) = toRowCol(oldX, oldY)
       activePieces = activePieces.filter { case (_, (x, y)) => x != oldX || y != oldY }
@@ -114,7 +114,7 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
   private def saveMoveAndState(moveVectorOpt: Option[MoveVector], stateVectorOpt: Option[Vector]): Unit ={
     (stateVectorOpt, moveVectorOpt) match {
       case (Some(sv: Vector), Some(mv: MoveVector)) =>
-        if(!getTrainingStates("training_data.csv").exists{ case (s: StateVector, m: MoveVector) => (s == sv) && m == mv }){
+        if(!getTrainingStates("training_data.csv").exists{case(s, m) => (s == sv) && m == mv}){
           val fw = new FileWriter("training_data.csv", true)
           fw.write(s"$sv,$mv\n")
           fw.close()

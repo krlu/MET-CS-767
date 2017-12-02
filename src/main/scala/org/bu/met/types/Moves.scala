@@ -44,13 +44,15 @@ object KnightMoves extends Moves {
 object PawnMoves extends Moves {
   override def apply(x: Int, y: Int, board: Array[Array[Option[ChessPiece]]],color: Color): Seq[Position] = {
     val yChange = colorValue(color,1)
-    val possibleMoves: Seq[Position] = Seq((x, y+yChange)).filter{case (a,b) =>
+    val possibleMoves: Seq[Position] = Seq((x, y+yChange))
+      .filter{case (a,b) => range.contains(a) && range.contains(b)}
+      .filter{case (a,b) =>
       val (r,c) = toRowCol(a,b)
       val pieceCondition = board(r)(c) match {
         case Some(_) => false
         case _ => true
       }
-      pieceCondition && range.contains(y+yChange)
+      pieceCondition
     }
     val upRight = if(range.contains(x+1) && range.contains(y+yChange)){
       val (r,c) = toRowCol(x+1, y+yChange)
@@ -66,7 +68,7 @@ object PawnMoves extends Moves {
         case _ => Seq()
       }
     } else Seq()
-    val doubleMove = if(y == 1 || y == 6) Seq((x, y + 2*yChange)) else Seq()
+    val doubleMove = if((y == 1 && color == White) || (y == 6 && color == Black)) Seq((x, y + 2*yChange)) else Seq()
     possibleMoves ++ upRight ++ upLeft ++ doubleMove
   }
   private def colorValue(color: Color, yValue: Int): Int = color match{

@@ -30,6 +30,7 @@ class InferenceModel {
     println("training....")
     val t1 = System.currentTimeMillis()
     val (trainingInput, trainingOutput) = setupTrainingData(fileName)
+    println(trainingInput.size)
     net.train(trainingInput, trainingOutput)
     val t2 = System.currentTimeMillis()
     println(s"training completed in ${(t2 - t1)/1000.0} seconds")
@@ -48,7 +49,7 @@ class InferenceModel {
     MoveVector(roundedData.head.toInt, roundedData(1).toInt, roundedData(2).toInt)
   }
 
-  private def setupTrainingData(fileName: String): (Seq[NNVector], Seq[NNVector]) ={
+  def setupTrainingData(fileName: String): (Seq[NNVector], Seq[NNVector]) ={
     var trainingInput: Seq[NNVector] = Seq()
     var trainingOutput: Seq[NNVector] = Seq()
     val bufferedSource = Source.fromFile(fileName)
