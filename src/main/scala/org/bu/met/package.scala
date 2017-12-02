@@ -2,8 +2,6 @@ package org.bu
 
 import org.bu.met.types.{Pawn, PawnMoves, RookMoves, _}
 
-import scala.collection.immutable.IndexedSeq
-
 /**
   * Created by Kenneth on 9/30/2017.
   */
@@ -34,4 +32,10 @@ package object met {
       .flatMap{case(piece,(a,b)) => getMovesForPiece(piece, a, b, board)}
     moves.contains((x,y))
   }
+
+  // TODO: Placeholder for actual chess-bot, used to generate initial training data
+  def choose[A](it: Iterator[A]): A =
+    it.zip(Iterator.iterate(1)(_ + 1)).reduceLeft((row, col) =>
+      if (util.Random.nextInt(col._2) == 0) col else row
+    )._1
 }

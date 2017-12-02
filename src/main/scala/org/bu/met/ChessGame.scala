@@ -10,6 +10,8 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
   private var moveVectorOpt: Option[MoveVector] = None
   private var stateVectorOpt: Option[Vector] = None
   private var gameOver: Boolean = false
+//  val model = new InferenceModel
+//  model.train("training_data.csv")
 
   activePieces.foreach{case(_, (row, col)) =>
     require(range.contains(row) && range.contains(col))
@@ -37,6 +39,7 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
     val piecesToMove: Seq[(ChessPiece, Position)] = activePieces.filter{case(piece, _) => piece.color == turn}
 //    if(activePieces.count { case (piece, _) => piece.isInstanceOf[King] } != 2)
 //      throw new IllegalStateException("Must have 2 kings!!!")
+//    model.computeMoveVector(StateVector(activePieces, turn))
 
     val kingOpt: Option[(ChessPiece, (Int, Int))] = piecesToMove.find{case (piece, _) => piece.isInstanceOf[King]}
     var kingInCheck = false
@@ -61,16 +64,15 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
     }
     if(possibleMoves.nonEmpty) {
 
-      // if new state vector is in the training set, then save
+      // if new state vector is in the training set, then save the state and move
       // save state before updating stateVectorOpt
       // TODO: throw out old state vectors at some point
       val newState = StateVector(activePieces, turn)
       val matchingState = getTrainingStates("training_data.csv").find{case(s, _) => s == newState}
       if(matchingState.nonEmpty)
         saveMoveAndState(moveVectorOpt, stateVectorOpt)
-
       val (newX, newY) = choose(possibleMoves.iterator)
-      stateVectorOpt = Some(StateVector(activePieces, turn))
+      stateVectorOpt = Some(newState)
       moveVectorOpt = Some(MoveVector(selectedPiece.stateVectorIndex, newX, newY))
 
       val (newRow, newCol) = toRowCol(newX, newY)
@@ -112,19 +114,14 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
   private def saveMoveAndState(moveVectorOpt: Option[MoveVector], stateVectorOpt: Option[Vector]): Unit ={
     (stateVectorOpt, moveVectorOpt) match {
       case (Some(sv: Vector), Some(mv: MoveVector)) =>
-        getTrainingStates("training_data.csv").map{case (s: StateVector,m: MoveVector) => (s == sv)}
-        val fw = new FileWriter("training_data.csv", true)
-        fw.write(s"$sv,$mv\n")
-        fw.close()
+        if(!getTrainingStates("training_data.csv").exists{ case (s: StateVector, m: MoveVector) => (s == sv) && m == mv }){
+          val fw = new FileWriter("training_data.csv", true)
+          fw.write(s"$sv,$mv\n")
+          fw.close()
+        }
       case _ =>
     }
   }
-
-  // TODO: Placeholder for actual chess-bot, used to generate initial training data
-  private def choose[A](it: Iterator[A]): A =
-    it.zip(Iterator.iterate(1)(_ + 1)).reduceLeft((row, col) =>
-      if (util.Random.nextInt(col._2) == 0) col else row
-    )._1
 
   private def attemptPromotePawn(p: Pawn, position: Position): Unit ={
     def promotablePawn(col: Int, color: Color) =
