@@ -6,38 +6,37 @@ trait Moves extends ((Int, Int, Array[Array[Option[ChessPiece]]], Color) => Seq[
 
 object KingMoves extends Moves {
   override def apply(x: Int, y: Int, board: Array[Array[Option[ChessPiece]]],color: Color): Seq[Position] = {
-    val possibleMoves =
+    val possibleMoves = FilterInvalidMoves(
       Seq((x, y+1), (x, y-1),
-          (x+1, y+1), (x+1, y), (x+1, y-1),
-          (x-1, y+1), (x-1, y), (x-1, y-1)
-      )
-      .filter{case (a,b) => range.contains(a) && range.contains(b)}
-      .filter{case (a,b) =>
-        val (row, col) = toRowCol(a,b)
-        board(row)(col) match {
-          case Some(piece) => piece.color != color
-          case None => true
-        }
-      }
+        (x+1, y+1), (x+1, y),
+        (x+1, y-1), (x-1, y+1),
+        (x-1, y), (x-1, y-1)), board, color)
     possibleMoves
   }
 }
 
 object KnightMoves extends Moves {
   override def apply(x: Int, y: Int, board: Array[Array[Option[ChessPiece]]],color: Color): Seq[Position] = {
-    val possibleMoves =
-      Seq((x+2, y+1), (x+2, y-1),
+    val possibleMoves = FilterInvalidMoves(
+        Seq(
+          (x+2, y+1), (x+2, y-1),
           (x+1, y+2), (x+1, y-2),
           (x-1, y+2), (x-1, y-2),
-          (x-2, y+1), (x-2, y-1)).filter{case (a,b) =>
-        val edgeCondition = range.contains(a) && range.contains(b)
-        val pieceCondition = board(b)(a) match {
-          case Some(piece) => piece.color != color
+          (x-2, y+1), (x-2, y-1)), board, color)
+    possibleMoves
+  }
+}
+
+object FilterInvalidMoves extends((Seq[Position], Board, Color) => Seq[Position]) {
+  override def apply(v1: Seq[(Int, Int)], board: Board, color: Color): Seq[(Int, Int)] = {
+    v1.filter{case (a,b) => range.contains(a) && range.contains(b)}
+      .filter{case (a,b) =>
+        val (r,c) = toRowCol(a,b)
+        board(r)(c) match {
+          case Some(x: ChessPiece) => x.color != color
           case _ => true
         }
-        edgeCondition && pieceCondition
       }
-    possibleMoves
   }
 }
 
@@ -48,11 +47,10 @@ object PawnMoves extends Moves {
       .filter{case (a,b) => range.contains(a) && range.contains(b)}
       .filter{case (a,b) =>
       val (r,c) = toRowCol(a,b)
-      val pieceCondition = board(r)(c) match {
+      board(r)(c) match {
         case Some(_) => false
         case _ => true
       }
-      pieceCondition
     }
     val upRight = if(range.contains(x+1) && range.contains(y+yChange)){
       val (r,c) = toRowCol(x+1, y+yChange)

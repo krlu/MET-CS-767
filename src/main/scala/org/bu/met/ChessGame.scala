@@ -37,11 +37,11 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
   def updateBoard(): Unit = {
 
     val piecesToMove: Seq[(ChessPiece, Position)] = activePieces.filter{case(piece, _) => piece.color == turn}
-    println(s"Game State: $activePieces, $turn")
+//    println(s"Game State: $activePieces, $turn")
 //    if(activePieces.count { case (piece, _) => piece.isInstanceOf[King] } != 2)
 //      throw new IllegalStateException("Must have 2 kings!!!")
 //    val moveVector: MoveVector = model.computeMoveVector(StateVector(activePieces, turn))
-
+//    println(piecesToMove)
     val kingOpt: Option[(ChessPiece, (Int, Int))] = piecesToMove.find{case (piece, _) => piece.isInstanceOf[King]}
     var kingInCheck = false
     val (selectedPiece: ChessPiece, (oldX,oldY)) = kingOpt match {
@@ -68,12 +68,12 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
       // if new state vector is in the training set, then save the state and move
       // save state before updating stateVectorOpt
       // TODO: throw out old state vectors at some point
-      val newState = StateVector(activePieces, turn)
-      val matchingState = getTrainingStates("training_data.csv").find{case(s, _) => s == newState}
+      val newSaveState = StateVector(activePieces, turn)
+      val matchingState = getTrainingStates("training_data.csv").find{case(s, _) => s == newSaveState}
       if(matchingState.nonEmpty)
         saveMoveAndState(moveVectorOpt, stateVectorOpt)
       val (newX, newY) = choose(possibleMoves.iterator)
-      stateVectorOpt = Some(newState)
+      stateVectorOpt = Some(newSaveState)
       moveVectorOpt = Some(MoveVector(selectedPiece.stateVectorIndex, newX, newY))
       val (newRow, newCol) = toRowCol(newX, newY)
       val (oldRow, oldCol) = toRowCol(oldX, oldY)
@@ -96,7 +96,7 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
     }
     else {
       gameOver = true
-      println(s"stalemate, $turn cannot move.")
+//      println(s"stalemate, $turn cannot move.")
     }
     turn = if (turn.equals(White)) Black else White // switch turns
   }

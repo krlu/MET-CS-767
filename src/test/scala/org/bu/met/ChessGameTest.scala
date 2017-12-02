@@ -153,7 +153,6 @@ class ChessGameTest extends FlatSpec with Matchers {
   }
 
   "King" should "be in check" in {
-    // TODO: if the piece has moved already, need to rethink valid moves!!!
     val pieces = Seq((King(White,4),(4,3)), (King(Black,20),(6,7)), (Rook(White,0),(3,7)))
     val game = new ChessGame(pieces, Black)
     val(oldRow, oldCol) = toRowCol(6,7)
@@ -162,5 +161,17 @@ class ChessGameTest extends FlatSpec with Matchers {
     hypotheticalBoard(oldRow)(oldCol) = None
     hypotheticalBoard(newRow)(newCol) = Some(King(Black,20))
     assert(inCheck(7,7,hypotheticalBoard, game.activePieces,Black))
+  }
+  "King" should "be in checkmate" in {
+    val pieces = Seq(
+      (King(Black, 20), (7, 4)),
+      (Pawn(Black, 24), (6, 4)),
+      (Pawn(Black, 25), (7, 5)),
+      (Queen(Black, 19), (3, 1)),
+      (King(White, 4), (5,4)),
+      (Knight(White, 1), (5, 5)),
+      (Bishop(White, 2), (6, 2)))
+    val game = new ChessGame(pieces, Black)
+    game.runGame(1)
   }
 }
