@@ -24,31 +24,45 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
     board
   }
 
-  def runGame(): Unit ={
-    while(!gameOver)
+  def runGame(maxMoves: Int): Unit ={
+    var numMoves = 0
+    while(!gameOver && numMoves < maxMoves) {
       updateBoard()
+      numMoves += 1
+    }
   }
 
   def updateBoard(): Unit = {
-    // save previous state
-    stateVectorOpt = Some(StateVector(activePieces, turn))
+
     val piecesToMove: Seq[(ChessPiece, Position)] = activePieces.filter{case(piece, _) => piece.color == turn}
+//    if(activePieces.count { case (piece, _) => piece.isInstanceOf[King] } != 2)
+//      throw new IllegalStateException("Must have 2 kings!!!")
+
     val kingOpt: Option[(ChessPiece, (Int, Int))] = piecesToMove.find{case (piece, _) => piece.isInstanceOf[King]}
     var kingInCheck = false
-    val (selectedPiece, (oldX,oldY)) = kingOpt match {
+    val (selectedPiece: ChessPiece, (oldX,oldY)) = kingOpt match {
       case Some((king: King, (x,y))) =>
-        kingInCheck = inCheck(x,y, board, turn)
+        kingInCheck = inCheck(x,y,board,activePieces,turn)
         if(kingInCheck) (king, (x,y))
         else choose(piecesToMove.iterator)
       // in some test cases there are no kings, but this wouldn't be realistic
       case _ => choose(piecesToMove.iterator)
     }
-    val possibleMoves: Seq[Position] = getMovesForPiece(selectedPiece, oldX, oldY, board).filter{case (a,b) => !inCheck(a,b, board, turn)}
-    turn = if (turn.equals(White)) Black else White // switch turns
+    val possibleMoves: Seq[Position] = selectedPiece match {
+      case _: King => getMovesForPiece(selectedPiece, oldX, oldY, board).filter{case (a, b) =>
+        val(oldRow, oldCol) = toRowCol(oldX,oldY)
+        val(newRow, newCol) = toRowCol(a,b)
+        val hypotheticalBoard = deepCopyBoard
+        hypotheticalBoacd rd(oldRow)(oldCol) = None
+        hypotheticalBoard(newRow)(newCol) = Some(selectedPiece)
+        !inCheck(a,b,hypotheticalBoard,activePieces,turn)
+      }
+      case _ => getMovesForPiece(selectedPiece, oldX, oldY, board)
+    }
     if(possibleMoves.nonEmpty) {
       val (newX, newY) = choose(possibleMoves.iterator)
-      println(newX, newY, selectedPiece)
       moveVectorOpt = Some(MoveVector(selectedPiece.stateVectorIndex, newX, newY))
+      stateVectorOpt = Some(StateVector(activePieces, turn))
       val (newRow, newCol) = toRowCol(newX, newY)
       val (oldRow, oldCol) = toRowCol(oldX, oldY)
       activePieces = activePieces.filter { case (_, (x, y)) => x != oldX || y != oldY }
@@ -65,9 +79,14 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
     else if(kingInCheck){
       gameOver = true
       saveMoveAndState(moveVectorOpt, stateVectorOpt)
-      println(s"$turn wins!!!")
+      val opposingColor = if(turn == White) Black else White
+      println(s"$opposingColor wins!!!")
     }
-    else println(s"stalemate, $turn cannot move.")
+    else {
+      gameOver = true
+      println(s"stalemate, $turn cannot move.")
+    }
+    turn = if (turn.equals(White)) Black else White // switch turns
   }
 
   private def saveMoveAndState(moveVectorOpt: Option[MoveVector], stateVectorOpt: Option[Vector]): Unit ={
@@ -96,7 +115,7 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
       val promotedPiece = choose(possiblePieces.iterator)
       board(row)(col) = Some(promotedPiece)
       activePieces = activePieces.filter{case( piece, pos) => piece match {
-        case p: Pawn => pos == (row,col)
+        case _: Pawn => pos == (row,col)
         case _ => false
       }}
       activePieces = activePieces :+ ((promotedPiece, (row,col)))
@@ -113,5 +132,15 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
         }
       }
     }
+  }
+  def isGameOver: Boolean = gameOver
+
+  def deepCopyBoard: Board = {
+    val newBoard: Array[Array[Option[ChessPiece]]] = Array.fill(8)(Array.fill(8)(None))
+    activePieces.foreach{case(piece, (x,y))=>
+      val (row,col) = toRowCol(x,y)
+      newBoard(row)(col) = Some(piece)
+    }
+    newBoard
   }
 }

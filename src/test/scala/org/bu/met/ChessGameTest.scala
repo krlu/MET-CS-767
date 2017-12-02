@@ -117,7 +117,7 @@ class ChessGameTest extends FlatSpec with Matchers {
 
   "Chess Game" should "checkmate king" in {
     val game = new ChessGame(Seq((King(Black, 20), (7, 7)),(Rook(White, 0), (7, 5)), (King(White, 4), (5, 6))), Black)
-    val possibleMoves = KingMoves(7, 7, game.board, Black).filter{case (x,y) => !inCheck(x,y, game.board, Black)}
+    val possibleMoves = KingMoves(7, 7, game.board, Black).filter{case (x,y) => !inCheck(x,y, game.board, game.activePieces, Black)}
     assert(possibleMoves == Seq())
     game.updateBoard()
   }
@@ -150,5 +150,17 @@ class ChessGameTest extends FlatSpec with Matchers {
       val (r, c) = toRowCol(x, y)
       board(r)(c).nonEmpty && board(r)(c).get == piece
     }
+  }
+
+  "King" should "be in check" in {
+    // TODO: if the piece has moved already, need to rethink valid moves!!!
+    val pieces = Seq((King(White,4),(4,3)), (King(Black,20),(6,7)), (Rook(White,0),(3,7)))
+    val game = new ChessGame(pieces, Black)
+    val(oldRow, oldCol) = toRowCol(6,7)
+    val(newRow, newCol) = toRowCol(7,7)
+    val hypotheticalBoard = game.deepCopyBoard
+    hypotheticalBoard(oldRow)(oldCol) = None
+    hypotheticalBoard(newRow)(newCol) = Some(King(Black,20))
+    assert(inCheck(7,7,hypotheticalBoard, game.activePieces,Black))
   }
 }

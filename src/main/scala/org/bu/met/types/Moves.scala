@@ -12,9 +12,11 @@ object KingMoves extends Moves {
           (x-1, y+1), (x-1, y), (x-1, y-1)
       )
       .filter{case (a,b) => range.contains(a) && range.contains(b)}
-      .filter{case (a,b) => board(b)(a) match {
+      .filter{case (a,b) =>
+        val (row, col) = toRowCol(a,b)
+        board(row)(col) match {
           case Some(piece) => piece.color != color
-          case _ => true
+          case None => true
         }
       }
     possibleMoves
@@ -45,7 +47,7 @@ object PawnMoves extends Moves {
     val possibleMoves: Seq[Position] = Seq((x, y+yChange)).filter{case (a,b) =>
       val (r,c) = toRowCol(a,b)
       val pieceCondition = board(r)(c) match {
-        case Some(piece) => false
+        case Some(_) => false
         case _ => true
       }
       pieceCondition && range.contains(y+yChange)
@@ -101,12 +103,12 @@ object BishopMoves extends Moves {
       val (newRow, newCol) = toRowCol(newX, newY)
       val edgeCondition = range.contains(newRow) && range.contains(newCol)
       if(edgeCondition) {
-        if (board(newRow)(newCol).nonEmpty && board(newRow)(newCol).get.color == color)
-          hitPiece = true // cannot hit own piece
-        if (!hitPiece)
-          moves = moves :+(newX, newY)
-        if (board(newRow)(newCol).nonEmpty)
-          hitPiece = true // cannot move any further if hit enemy piece
+        if (board(newRow)(newCol).nonEmpty) {
+          if (board(newRow)(newCol).get.color != color)  // cannot hit own piece
+            moves = moves :+ (newX, newY) // can take enemy piece
+          hitPiece = true  // cannot move any further if
+        }
+        if (!hitPiece) moves = moves :+(newX, newY)
       }
     }
     moves
@@ -137,12 +139,12 @@ object RookMoves extends Moves{
       val (newRow, newCol) = toRowCol(newX, newY)
       val edgeCondition = range.contains(newRow) && range.contains(newCol)
       if(edgeCondition) {
-        if (board(newRow)(newCol).nonEmpty && board(newRow)(newCol).get.color == color)
-          hitPiece = true // cannot hit own piece
-        if (!hitPiece)
-          moves = moves :+(newX, newY)
-        if (board(newRow)(newCol).nonEmpty)
-          hitPiece = true // cannot move any further if hit enemy piece
+        if (board(newRow)(newCol).nonEmpty) {
+          if (board(newRow)(newCol).get.color != color)  // cannot hit own piece
+            moves = moves :+ (newX, newY) // can take enemy piece
+          hitPiece = true  // cannot move any further if
+        }
+        if (!hitPiece) moves = moves :+(newX, newY)
       }
     }
     moves
