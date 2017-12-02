@@ -7,14 +7,14 @@ trait Vector{
   override def toString = elements.mkString(",")
 }
 
-protected case class StateVector(elements: Seq[Int]) extends Vector
+sealed case class StateVector(elements: Seq[Int]) extends Vector
 
 object StateVector{
   private val NUM_CHESS_PIECES = 32
   def apply(activePieces: Seq[(ChessPiece, Position)], turn: Color): StateVector = {
     val turnInt = if(turn == Black) 0 else 1
     val statesArray = Array.fill(NUM_CHESS_PIECES)(Seq(1,1,1)) // 1 - taken, (0,0) default position
-    activePieces.foreach{ case(piece,(x,y)) => statesArray(piece.stateVectorIndex) = Seq(-1,x+1,y+1)} // -1 - not taken, do NOT use zero, as it will create dead nodes!!!
+    activePieces.foreach{ case(piece,(x,y)) => statesArray(piece.stateVectorIndex) = Seq(0,x+1,y+1)} // -1 - not taken, do NOT use zero, as it will create dead nodes!!!
     StateVector(statesArray.toSeq.flatten ++ Seq(turnInt))
   }
 }

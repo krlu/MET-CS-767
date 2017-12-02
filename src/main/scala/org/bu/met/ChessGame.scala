@@ -1,8 +1,8 @@
 package org.bu.met
 
 import java.io.FileWriter
-
 import org.bu.met.types._
+import scala.io.Source
 
 class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
 
@@ -53,16 +53,26 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
         val(oldRow, oldCol) = toRowCol(oldX,oldY)
         val(newRow, newCol) = toRowCol(a,b)
         val hypotheticalBoard = deepCopyBoard
-        hypotheticalBoacd rd(oldRow)(oldCol) = None
+        hypotheticalBoard(oldRow)(oldCol) = None
         hypotheticalBoard(newRow)(newCol) = Some(selectedPiece)
         !inCheck(a,b,hypotheticalBoard,activePieces,turn)
       }
       case _ => getMovesForPiece(selectedPiece, oldX, oldY, board)
     }
     if(possibleMoves.nonEmpty) {
+
+      // if new state vector is in the training set, then save
+      // save state before updating stateVectorOpt
+      // TODO: throw out old state vectors at some point
+      val newState = StateVector(activePieces, turn)
+      val matchingState = getTrainingStates("training_data.csv").find{case(s, _) => s == newState}
+      if(matchingState.nonEmpty)
+        saveMoveAndState(moveVectorOpt, stateVectorOpt)
+
       val (newX, newY) = choose(possibleMoves.iterator)
-      moveVectorOpt = Some(MoveVector(selectedPiece.stateVectorIndex, newX, newY))
       stateVectorOpt = Some(StateVector(activePieces, turn))
+      moveVectorOpt = Some(MoveVector(selectedPiece.stateVectorIndex, newX, newY))
+
       val (newRow, newCol) = toRowCol(newX, newY)
       val (oldRow, oldCol) = toRowCol(oldX, oldY)
       activePieces = activePieces.filter { case (_, (x, y)) => x != oldX || y != oldY }
@@ -89,9 +99,20 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
     turn = if (turn.equals(White)) Black else White // switch turns
   }
 
+  private def getTrainingStates(fileName: String): Seq[(StateVector, MoveVector)] ={
+    val bufferedSource = Source.fromFile(fileName)
+    var states = Seq.empty[(StateVector, MoveVector)]
+    for (line <- bufferedSource.getLines) {
+      val cols = line.split(",").map(_.trim.toInt)
+      states = states :+ (StateVector(cols.dropRight(3).toSeq), MoveVector(cols(97), cols(98), cols(99)))
+    }
+    states
+  }
+
   private def saveMoveAndState(moveVectorOpt: Option[MoveVector], stateVectorOpt: Option[Vector]): Unit ={
     (stateVectorOpt, moveVectorOpt) match {
-      case (Some(sv), Some(mv)) =>
+      case (Some(sv: Vector), Some(mv: MoveVector)) =>
+        getTrainingStates("training_data.csv").map{case (s: StateVector,m: MoveVector) => (s == sv)}
         val fw = new FileWriter("training_data.csv", true)
         fw.write(s"$sv,$mv\n")
         fw.close()
