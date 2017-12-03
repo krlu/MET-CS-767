@@ -10,6 +10,7 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
   private var moveVectorOpt: Option[MoveVector] = None
   private var stateVectorOpt: Option[Vector] = None
   private var gameOver: Boolean = false
+  var numMoves = 0
 //  val model = new InferenceModel
 //  model.train("old_training_data.csv")
 
@@ -27,7 +28,7 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
   }
 
   def runGame(maxMoves: Int): Unit ={
-    var numMoves = 0
+
     while(!gameOver && numMoves < maxMoves) {
       updateBoard()
       numMoves += 1
@@ -37,7 +38,6 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
   def updateBoard(): Unit = {
 
     val piecesToMove: Seq[(ChessPiece, Position)] = activePieces.filter{case(piece, _) => piece.color == turn}
-//    println(s"Game State: $activePieces, $turn")
 //    if(activePieces.count { case (piece, _) => piece.isInstanceOf[King] } != 2)
 //      throw new IllegalStateException("Must have 2 kings!!!")
 //    val moveVector: MoveVector = model.computeMoveVector(StateVector(activePieces, turn))
@@ -96,7 +96,7 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
     }
     else {
       gameOver = true
-//      println(s"stalemate, $turn cannot move.")
+      println(s"stalemate, $turn cannot move.")
     }
     turn = if (turn.equals(White)) Black else White // switch turns
   }
