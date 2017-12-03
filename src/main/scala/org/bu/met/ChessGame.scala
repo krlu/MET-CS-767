@@ -10,6 +10,7 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
   private var moveVectorOpt: Option[MoveVector] = None
   private var stateVectorOpt: Option[Vector] = None
   private var gameOver: Boolean = false
+  private var kingInCheck: Boolean = false
   var numMoves = 0
 //  val model = new InferenceModel
 //  model.train("old_training_data.csv")
@@ -27,32 +28,59 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
     board
   }
 
-  def runGame(maxMoves: Int): Unit ={
-
+  def runGame(maxMoves: Int, model: Option[InferenceModel] = None): Unit ={
     while(!gameOver && numMoves < maxMoves) {
-      updateBoard()
+      updateBoard(model)
       numMoves += 1
     }
   }
 
-  def updateBoard(): Unit = {
+  def updateBoard(inferenceModel: Option[InferenceModel] = None): Unit = {
+    //    if(activePieces.count { case (piece, _) => piece.isInstanceOf[King] } != 2)
+    //      throw new IllegalStateException("Must have 2 kings!!!")
+    //    val moveVector: MoveVector = model.computeMoveVector(StateVector(activePieces, turn))
+    //    println(piecesToMove)
+    val (selectedPiece, oldPosition, newPositionOpt) = inferenceModel match {
+      case Some(model) => selectMoveWithNeuralNet(model)
+      case None => randomlySelectMove()
+    }
+    updateBoardHelper(selectedPiece, oldPosition, newPositionOpt, kingInCheck)
+  }
 
+  private def selectMoveWithNeuralNet(model: InferenceModel): (ChessPiece, Position, Option[Position]) = {
+    val moveVector = model.computeMoveVector(StateVector(activePieces, turn))
+    val (selectedPieceOpt, newPos) = moveVector.toReadableMove
+    selectedPieceOpt match {
+      case Some(selectedPiece) =>
+        activePieces.find{case(p, _) => p == selectedPiece} match {
+          case Some((piece, oldPos)) =>
+            val possibleMoves = getPossibleMoves(selectedPiece, oldPos)
+            if(possibleMoves.contains(newPos)) (piece, oldPos, Some(newPos)) else randomlySelectMove()
+          case _ => randomlySelectMove()
+        }
+      case _ => randomlySelectMove()
+    }
+  }
+
+  private def randomlySelectMove(): (ChessPiece, Position, Option[Position]) = {
     val piecesToMove: Seq[(ChessPiece, Position)] = activePieces.filter{case(piece, _) => piece.color == turn}
-//    if(activePieces.count { case (piece, _) => piece.isInstanceOf[King] } != 2)
-//      throw new IllegalStateException("Must have 2 kings!!!")
-//    val moveVector: MoveVector = model.computeMoveVector(StateVector(activePieces, turn))
-//    println(piecesToMove)
+
     val kingOpt: Option[(ChessPiece, (Int, Int))] = piecesToMove.find{case (piece, _) => piece.isInstanceOf[King]}
-    var kingInCheck = false
     val (selectedPiece: ChessPiece, (oldX,oldY)) = kingOpt match {
       case Some((king: King, (x,y))) =>
         kingInCheck = inCheck(x,y,board,activePieces,turn)
         if(kingInCheck) (king, (x,y))
         else choose(piecesToMove.iterator)
-      // in some test cases there are no kings, but this wouldn't be realistic
       case _ => choose(piecesToMove.iterator)
     }
-    val possibleMoves: Seq[Position] = selectedPiece match {
+    val possibleMoves: Seq[Position] = getPossibleMoves(selectedPiece, (oldX, oldY))
+    val newPositionOpt = if(possibleMoves.nonEmpty) Some(choose(possibleMoves.iterator)) else None
+    (selectedPiece, (oldX, oldY), newPositionOpt)
+  }
+
+  private def getPossibleMoves(selectedPiece: ChessPiece, oldPos: Position): Seq[Position] ={
+    val (oldX, oldY) = oldPos
+    selectedPiece match {
       case _: King => getMovesForPiece(selectedPiece, oldX, oldY, board).filter{case (a, b) =>
         val(oldRow, oldCol) = toRowCol(oldX,oldY)
         val(newRow, newCol) = toRowCol(a,b)
@@ -63,8 +91,10 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
       }
       case _ => getMovesForPiece(selectedPiece, oldX, oldY, board)
     }
-    if(possibleMoves.nonEmpty) {
-
+  }
+  private def updateBoardHelper(selectedPiece: ChessPiece, oldPosition: Position,
+                        newPosition: Option[Position], kingInCheck: Boolean): Unit ={
+    if(newPosition.nonEmpty) {
       // if new state vector is in the training set, then save the state and move
       // save state before updating stateVectorOpt
       // TODO: throw out old state vectors at some point
@@ -72,7 +102,8 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
       val matchingState = getTrainingStates("training_data.csv").find{case(s, _) => s == newSaveState}
       if(matchingState.nonEmpty)
         saveMoveAndState(moveVectorOpt, stateVectorOpt)
-      val (newX, newY) = choose(possibleMoves.iterator)
+      val (oldX, oldY) = oldPosition
+      val (newX, newY) = newPosition.get
       stateVectorOpt = Some(newSaveState)
       moveVectorOpt = Some(MoveVector(selectedPiece.stateVectorIndex, newX, newY))
       val (newRow, newCol) = toRowCol(newX, newY)

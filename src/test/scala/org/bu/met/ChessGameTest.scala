@@ -1,11 +1,9 @@
 package org.bu.met
 
+import org.bu.met.data.DataGenerator
 import org.bu.met.types._
 import org.scalatest.{FlatSpec, Matchers}
 
-/**
-  * Created by Kenneth on 9/30/2017.
-  */
 class ChessGameTest extends FlatSpec with Matchers {
   val game = new ChessGame(Seq((Knight(Black, 17), toRowCol(5,5))), Black)
   "Chess Game" should "move queens" in {
@@ -173,5 +171,15 @@ class ChessGameTest extends FlatSpec with Matchers {
       (Bishop(White, 2), (6, 2)))
     val game = new ChessGame(pieces, Black)
     game.runGame(1)
+  }
+
+  "Inference model" should "checkmate" in {
+    val model = new InferenceModel
+    model.train("case_specific_training_sets/old_training_data.csv")
+    Seq(DataGenerator.testCase1, DataGenerator.testCase2, DataGenerator.testCase3).foreach{ pieces =>
+      val game = new ChessGame(pieces, White)
+      game.runGame(10, Some(model))
+      assert(game.numMoves == 2)
+    }
   }
 }

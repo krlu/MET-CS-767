@@ -29,22 +29,16 @@ object DataGenerator {
     (Bishop(White, 2), (6, 2)))
 
   def main(args: Array[String]): Unit ={
-    // TODO: Need to setup good training example
     val pieces = testCase3
-//    var totalmoves = Seq.empty[Int]
     for(i <- 1 to 100) {
-//      println(i)
       var gameOver = false
       var turn: Color = White
       while (!gameOver && turn == White) {
         val game = new ChessGame(pieces, White)
-        game.runGame(50)
+        game.runGame(5)
         turn = game.turn
         gameOver = game.isGameOver
-//        totalmoves = totalmoves :+ game.numMoves
       }
     }
-//    println(totalmoves)
-//    println(s"Average numMoves: ${totalmoves.sum/totalmoves.size}")
   }
 }

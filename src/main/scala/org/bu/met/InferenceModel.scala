@@ -39,8 +39,8 @@ class InferenceModel {
   def computeMoveVector(state: StateVector): MoveVector ={
     val input = ->(state.elements.map(_.toDouble):_*)
     val output: NNVector = net.evaluate(input)
-    println(s"Input: $input")
-    println(s"Output: ${output.data.toSeq.map{Math.round}}")
+//    println(s"Input: $input")
+//    println(s"Output: ${output.data.toSeq.map{Math.round}}")
     convertToMoveVector(output)
   }
 
