@@ -175,7 +175,7 @@ class ChessGameTest extends FlatSpec with Matchers {
 
   "Inference model" should "checkmate" in {
     val model = new InferenceModel
-    model.train("case_specific_training_sets/final_training_data.csv")
+    model.train("final_training_data.csv")
     Seq(DataGenerator.testCase1, DataGenerator.testCase2, DataGenerator.testCase3).foreach{ pieces =>
       val game = new ChessGame(pieces, White)
       game.runGame(10, Some(model))
