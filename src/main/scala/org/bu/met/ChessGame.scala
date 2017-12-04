@@ -34,17 +34,31 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
   }
 
   def updateBoard(inferenceModel: Option[InferenceModel] = None): Unit = {
-    //    if(activePieces.count { case (piece, _) => piece.isInstanceOf[King] } != 2)
-    //      throw new IllegalStateException("Must have 2 kings!!!")
-    //    val moveVector: MoveVector = model.computeMoveVector(StateVector(activePieces, turn))
-    val (selectedPiece, oldPosition, newPositionOpt) = inferenceModel match {
+    // tuple contains (selectedPiece, oldPosition, new position)
+    kingInCheck = updateKingCheck(turn)
+    val tupleOpt = inferenceModel match {
       case Some(model) => selectMoveWithNeuralNet(model)
       case None => randomlySelectMove()
     }
-    updateBoardHelper(selectedPiece, oldPosition, newPositionOpt, kingInCheck)
+    tupleOpt match {
+      case Some((selectedPiece, oldPos, newPos)) =>
+        updateBoardHelper(selectedPiece, oldPos, newPos, kingInCheck)
+      case None =>
+        if(kingInCheck){
+          gameOver = true
+          saveMoveAndState(moveVectorOpt, stateVectorOpt)
+          val opposingColor = if(turn == White) Black else White
+          println(s"$opposingColor wins!!!")
+        }
+        else {
+          gameOver = true
+          println(s"stalemate, $turn cannot move.")
+        }
+    }
+    turn = if (turn.equals(White)) Black else White // switch turns
   }
 
-  private def selectMoveWithNeuralNet(model: InferenceModel): (ChessPiece, Position, Option[Position]) = {
+  private def selectMoveWithNeuralNet(model: InferenceModel): Option[(ChessPiece, Position, Position)] = {
     val moveVector = model.computeMoveVector(StateVector(activePieces, turn))
     val (selectedPieceOpt, newPos) = moveVector.toReadableMove
     selectedPieceOpt match {
@@ -52,29 +66,41 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
         activePieces.find{case(p, _) => p == selectedPiece} match {
           case Some((piece, oldPos)) =>
             val possibleMoves = getPossibleMoves(selectedPiece, oldPos)
-            if(possibleMoves.contains(newPos)) (piece, oldPos, Some(newPos)) else randomlySelectMove()
+            if(possibleMoves.contains(newPos)) Some((piece, oldPos, newPos)) else randomlySelectMove()
           case _ => randomlySelectMove()
         }
       case _ => randomlySelectMove()
     }
   }
 
-  private def randomlySelectMove(): (ChessPiece, Position, Option[Position]) = {
+  private def randomlySelectMove(): Option[(ChessPiece, Position, Position)] = {
     val piecesToMove: Seq[(ChessPiece, Position)] = activePieces.filter{case(piece, _) => piece.color == turn}
-
-    val kingOpt: Option[(ChessPiece, (Int, Int))] = piecesToMove.find{case (piece, _) => piece.isInstanceOf[King]}
-    val (selectedPiece: ChessPiece, (oldX,oldY)) = kingOpt match {
-      case Some((king: King, (x,y))) =>
-        kingInCheck = inCheck(x,y,board,activePieces,turn)
-        if(kingInCheck) (king, (x,y))
-        else choose(piecesToMove.iterator)
-      case _ => choose(piecesToMove.iterator)
+    val possibleMoves = piecesToMove.flatMap{ case (piece, (x,y)) =>
+      getPossibleMoves(piece, (x, y)).map{ move => (piece,(x,y),move)}
     }
-    val possibleMoves: Seq[Position] = getPossibleMoves(selectedPiece, (oldX, oldY))
-    val newPositionOpt = if(possibleMoves.nonEmpty) Some(choose(possibleMoves.iterator)) else None
-    (selectedPiece, (oldX, oldY), newPositionOpt)
+    if(possibleMoves.isEmpty) None
+    else {
+      val kingOpt: Option[(ChessPiece, (Int, Int))] = piecesToMove.find { case (piece, _) => piece.isInstanceOf[King] }
+      val tupleOpt = kingOpt match {
+        case Some((king: King, (x, y))) =>
+          if (kingInCheck){
+            val kingMoves = possibleMoves.filter(_._1 == king)
+            if(kingMoves.isEmpty) None else Some(choose(kingMoves.iterator))
+          }
+          else Some(choose(possibleMoves.iterator))
+        case _ => Some(choose(possibleMoves.iterator))
+      }
+      tupleOpt
+    }
   }
-
+  private def updateKingCheck(color: Color): Boolean ={
+    val piecesToMove: Seq[(ChessPiece, Position)] = activePieces.filter{case(piece, _) => piece.color == turn}
+    val kingOpt: Option[(ChessPiece, (Int, Int))] = piecesToMove.find { case (piece, _) => piece.isInstanceOf[King] }
+    kingOpt match {
+      case Some((king: King, (x, y))) => inCheck(x, y, board, activePieces, turn)
+      case _ => false
+    }
+  }
   private def getPossibleMoves(selectedPiece: ChessPiece, oldPos: Position): Seq[Position] ={
     val (oldX, oldY) = oldPos
     selectedPiece match {
@@ -94,8 +120,8 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
     }
   }
   private def updateBoardHelper(selectedPiece: ChessPiece, oldPosition: Position,
-                        newPosition: Option[Position], kingInCheck: Boolean): Unit ={
-    if(newPosition.nonEmpty) {
+                        newPosition: Position, kingInCheck: Boolean): Unit ={
+
       // if new state vector is in the training set, then save the state and move
       // save state before updating stateVectorOpt
       // TODO: throw out old state vectors at some point
@@ -104,7 +130,7 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
       if(matchingState.nonEmpty)
         saveMoveAndState(moveVectorOpt, stateVectorOpt)
       val (oldX, oldY) = oldPosition
-      val (newX, newY) = newPosition.get
+      val (newX, newY) = newPosition
       stateVectorOpt = Some(newSaveState)
       moveVectorOpt = Some(MoveVector(selectedPiece.stateVectorIndex, newX, newY))
       val (newRow, newCol) = toRowCol(newX, newY)
@@ -119,18 +145,6 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
       activePieces = activePieces :+(selectedPiece, (newX, newY))
       board(newRow)(newCol) = Some(selectedPiece)
       board(oldRow)(oldCol) = None
-    }
-    else if(kingInCheck){
-      gameOver = true
-      saveMoveAndState(moveVectorOpt, stateVectorOpt)
-      val opposingColor = if(turn == White) Black else White
-      println(s"$opposingColor wins!!!")
-    }
-    else {
-      gameOver = true
-      println(s"stalemate, $turn cannot move.")
-    }
-    turn = if (turn.equals(White)) Black else White // switch turns
   }
 
   private def getTrainingStates(fileName: String): Seq[(StateVector, MoveVector)] ={
