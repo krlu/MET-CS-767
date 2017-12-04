@@ -48,11 +48,11 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
           gameOver = true
           saveMoveAndState(moveVectorOpt, stateVectorOpt)
           val opposingColor = if(turn == White) Black else White
-          println(s"$opposingColor wins!!!")
+//          println(s"$opposingColor wins!!!")
         }
         else {
           gameOver = true
-          println(s"stalemate, $turn cannot move.")
+//          println(s"stalemate, $turn cannot move.")
         }
     }
     turn = if (turn.equals(White)) Black else White // switch turns

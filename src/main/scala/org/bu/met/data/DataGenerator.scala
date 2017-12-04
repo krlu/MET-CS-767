@@ -43,12 +43,13 @@ object DataGenerator {
 
   def main(args: Array[String]): Unit ={
     val pieces = testCase4
-    for(i <- 1 to 100) {
+    for(i <- 1 to 500) {
       var gameOver = false
       var turn: Color = White
+      println(i)
       while (!gameOver && turn == White) {
         val game = new ChessGame(pieces, White)
-        game.runGame(2)
+        game.runGame(10)
         turn = game.turn
         gameOver = game.isGameOver
       }
