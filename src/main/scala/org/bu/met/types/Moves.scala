@@ -84,7 +84,7 @@ object BishopMoves extends Moves {
     val possibleMoves = upRight ++ upLeft ++ downRight ++ downLeft
     possibleMoves
   }
-  protected def generatePositions(board: Board, pos: Position, dirX: Direction, dirY: Direction, color: Color): Seq[Position] = {
+  def generatePositions(board: Board, pos: Position, dirX: Direction, dirY: Direction, color: Color): Seq[Position] = {
     var hitPiece = false
     val (x,y) = pos
     var moves = Seq.empty[Position]
@@ -95,20 +95,20 @@ object BishopMoves extends Moves {
         case _ => throw new IllegalArgumentException("dirX must be left or right")
       }
       val changeY = dirY match {
-        case Up => -i
-        case Down => i
+        case Up => i
+        case Down => -i
         case _ => throw new IllegalArgumentException("dirY must be up or down")
       }
       val (newX, newY) = (x + changeX, y + changeY)
       val (newRow, newCol) = toRowCol(newX, newY)
       val edgeCondition = range.contains(newRow) && range.contains(newCol)
-      if(edgeCondition) {
+      if(edgeCondition  && !hitPiece) {
         if (board(newRow)(newCol).nonEmpty) {
           if (board(newRow)(newCol).get.color != color)  // cannot hit own piece
             moves = moves :+ (newX, newY) // can take enemy piece
           hitPiece = true  // cannot move any further if
         }
-        if (!hitPiece) moves = moves :+(newX, newY)
+        else moves = moves :+(newX, newY)
       }
     }
     moves
@@ -138,13 +138,13 @@ object RookMoves extends Moves{
       val (newX, newY) = (x + changeX, y + changeY)
       val (newRow, newCol) = toRowCol(newX, newY)
       val edgeCondition = range.contains(newRow) && range.contains(newCol)
-      if(edgeCondition) {
+      if(edgeCondition  && !hitPiece) {
         if (board(newRow)(newCol).nonEmpty) {
           if (board(newRow)(newCol).get.color != color)  // cannot hit own piece
             moves = moves :+ (newX, newY) // can take enemy piece
           hitPiece = true  // cannot move any further if
         }
-        if (!hitPiece) moves = moves :+(newX, newY)
+        else moves = moves :+(newX, newY)
       }
     }
     moves

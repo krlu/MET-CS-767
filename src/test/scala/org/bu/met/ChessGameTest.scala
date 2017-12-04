@@ -10,8 +10,8 @@ class ChessGameTest extends FlatSpec with Matchers {
     for(_ <- 0 to 100) {
       val game = new ChessGame(Seq((Queen(Black, 19), (5,5))), Black)
       val possibleMoves = QueenMoves(5,5, game.board, Black)
-      assert(possibleMoves ==
-        List(
+      assert(possibleMoves.toSet ==
+        Set(
           (6,5), (7,5),
           (4,5), (3,5), (2,5), (1,5), (0,5),
           (5,6), (5,7),
@@ -29,8 +29,8 @@ class ChessGameTest extends FlatSpec with Matchers {
     for(_ <- 0 to 100) {
       val game = new ChessGame(Seq((Bishop(Black, 18), (5,5))), Black)
       val possibleMoves = BishopMoves(5,5, game.board, Black)
-      assert(possibleMoves ==
-        List(
+      assert(possibleMoves.toSet ==
+        Set(
           (6,4), (7,3),
           (4,4), (3,3), (2,2), (1,1), (0,0),
           (6,6), (7,7),
@@ -42,8 +42,8 @@ class ChessGameTest extends FlatSpec with Matchers {
       val game = new ChessGame(Seq((Bishop(Black, 18), (5, 5)), (Pawn(Black, 24), (4,4))), Black)
       val bishopMoves = BishopMoves(5, 5, game.board, Black)
       val pawnMoves = PawnMoves(4,4, game.board, Black)
-      assert(bishopMoves ==
-        List(
+      assert(bishopMoves.toSet ==
+        Set(
           (6, 4), (7, 3),
           (6, 6), (7, 7),
           (4, 6), (3, 7)
@@ -57,8 +57,8 @@ class ChessGameTest extends FlatSpec with Matchers {
     for(_ <- 0 to 100){
       val game = new ChessGame(Seq((Bishop(Black, 18), (5, 5)), (Pawn(White, 8), (4,4))), Black)
       val bishopMoves = BishopMoves(5, 5, game.board, Black)
-      assert(bishopMoves ==
-        List(
+      assert(bishopMoves.toSet ==
+        Set(
           (6, 4), (7, 3),
           (4, 4), (6, 6),
           (7, 7), (4, 6),
@@ -73,13 +73,13 @@ class ChessGameTest extends FlatSpec with Matchers {
     for (_ <- 0 to 100) {
       val game = new ChessGame(Seq((Rook(Black, 16), (5, 5))), Black)
       val possibleMoves = RookMoves(5, 5, game.board, Black)
-      assert(possibleMoves ==
+      assert(possibleMoves.toSet ==
         List(
           (6,5), (7,5),
           (4,5), (3,5), (2,5), (1,5), (0,5),
           (5,6), (5,7),
           (5,4), (5,3), (5,2), (5,1), (5,0)
-        )
+        ).toSet
       )
       game.updateBoard()
       assert(movedCorrectly(possibleMoves, game.board, Rook(Black, 16)))
@@ -175,7 +175,7 @@ class ChessGameTest extends FlatSpec with Matchers {
 
   "Inference model" should "checkmate" in {
     val model = new InferenceModel
-    model.train("case_specific_training_sets/old_training_data.csv")
+    model.train("case_specific_training_sets/final_training_data.csv")
     Seq(DataGenerator.testCase1, DataGenerator.testCase2, DataGenerator.testCase3).foreach{ pieces =>
       val game = new ChessGame(pieces, White)
       game.runGame(10, Some(model))

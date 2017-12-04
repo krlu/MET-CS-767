@@ -12,8 +12,6 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
   private var gameOver: Boolean = false
   private var kingInCheck: Boolean = false
   var numMoves = 0
-//  val model = new InferenceModel
-//  model.train("old_training_data.csv")
 
   activePieces.foreach{case(_, (row, col)) =>
     require(range.contains(row) && range.contains(col))
@@ -39,7 +37,6 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
     //    if(activePieces.count { case (piece, _) => piece.isInstanceOf[King] } != 2)
     //      throw new IllegalStateException("Must have 2 kings!!!")
     //    val moveVector: MoveVector = model.computeMoveVector(StateVector(activePieces, turn))
-    //    println(piecesToMove)
     val (selectedPiece, oldPosition, newPositionOpt) = inferenceModel match {
       case Some(model) => selectMoveWithNeuralNet(model)
       case None => randomlySelectMove()
@@ -85,9 +82,13 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
         val(oldRow, oldCol) = toRowCol(oldX,oldY)
         val(newRow, newCol) = toRowCol(a,b)
         val hypotheticalBoard = deepCopyBoard
+        val hypotheticalPieces = hypotheticalBoard(newRow)(newCol) match {
+          case Some(piece) => activePieces.filter{case (p, __) => p.stateVectorIndex != piece.stateVectorIndex}
+          case None => activePieces
+        }
         hypotheticalBoard(oldRow)(oldCol) = None
         hypotheticalBoard(newRow)(newCol) = Some(selectedPiece)
-        !inCheck(a,b,hypotheticalBoard,activePieces,turn)
+        !inCheck(a,b,hypotheticalBoard,hypotheticalPieces,turn)
       }
       case _ => getMovesForPiece(selectedPiece, oldX, oldY, board)
     }
@@ -181,6 +182,7 @@ class ChessGame(var activePieces: Seq[(ChessPiece, Position)], var turn: Color){
         }
       }
     }
+    println()
   }
   def isGameOver: Boolean = gameOver
 

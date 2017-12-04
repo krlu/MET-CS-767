@@ -28,7 +28,8 @@ package object met {
     val moves: Seq[(Int, Int)] = pieces
       .filter{case (piece, _) => piece.color == opposingColor}
       .flatMap{case(piece,(a,b)) => getMovesForPiece(piece, a, b, board)}
-    moves.contains((x,y))
+    val a = moves.contains((x,y))
+    a
   }
 
   // TODO: Placeholder for actual chess-bot, used to generate initial training data

@@ -58,7 +58,7 @@ case class MoveVector(private val stateVectorIndex: Int,
 // whiteKing: (taken, x, y),
 // whiteBishop2: (taken, x, y),
 // whiteKnight2: (taken, x, y),
-// whiteRook2: (taken, x, y),  // 7 * 3
+// whiteRook2: (taken, x, y),  // 7
 // whitePawn1: (taken, x, y),
 // whitePawn2: (taken, x, y),
 // whitePawn3: (taken, x, y),
@@ -66,15 +66,15 @@ case class MoveVector(private val stateVectorIndex: Int,
 // whitePawn5: (taken, x, y),
 // whitePawn6: (taken, x, y),
 // whitePawn7: (taken, x, y),
-// whitePawn8: (taken, x, y), // 15 * 3
-// blackRook1: (taken, x, y), // 16 * 3
+// whitePawn8: (taken, x, y), // 15
+// blackRook1: (taken, x, y), // 16
 // blackKnight1: (taken, x, y),
 // blackBishop1: (taken, x, y),
 // blackQueen: (taken, x, y),
 // blackKing: (taken, x, y),
 // blackBishop2: (taken, x, y),
 // blackKnight2: (taken, x, y),
-// blackRook2: (taken, x, y), // 23 * 3
+// blackRook2: (taken, x, y), // 23
 // blackPawn1: (taken, x, y),
 // blackPawn2: (taken, x, y),
 // blackPawn3: (taken, x, y),
@@ -82,5 +82,5 @@ case class MoveVector(private val stateVectorIndex: Int,
 // blackPawn5: (taken, x, y),
 // blackPawn6: (taken, x, y),
 // blackPawn7: (taken, x, y),
-// blackPawn8: (taken, x, y), // 31 * 3
+// blackPawn8: (taken, x, y), // 31
 // turn: Int]
