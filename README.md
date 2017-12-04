@@ -46,19 +46,18 @@ Go to MainExperiment.scala and run the main method, takes no command line argume
 Modifiable parameters: 
 
 - Starting state (line 11). Can use any of the other test cases 1 through 4. Defaults to testCase4
-
+- Training set (line 9). Can use any csv file of your choice. Defaults to final_training_data.csv
 ```
 7   def main(args: Array[String]) {
 8     val model = new InferenceModel
-9     val s = "case_specific_training_sets/final"
-10    model.train("training_data.csv")
-11    val pieces = DataGenerator.testCase4
-12    val game = new ChessGame(pieces, White)
-13    game.runGame(10, Some(model))
-14    println(game.numMoves)
-15    val move = model.computeMoveVector(StateVector(pieces, White))
-16    println(move.toReadableMove)
-17  }
+9     model.train("final_training_data.csv")
+10    val pieces = DataGenerator.testCase4
+11    val game = new ChessGame(pieces, White)
+12    game.runGame(10, Some(model))
+13    println(game.numMoves)
+14    val move = model.computeMoveVector(StateVector(pieces, White))
+15    println(move.toReadableMove)
+16  }
 ```
 
 
