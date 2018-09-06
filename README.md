@@ -2,6 +2,8 @@
 
 Term Project for MetCS 767 Machine Learning Fall 2017
 
+Trains a chess bot to learn strategies for chess via a few simple examples while still using a neural net. This is different than DeepMind's chess model which uses billions of complex training examples. 
+
 ## Requirements 
 - scala 2.12.3 (or higher) 
 - sbt 0.13.8 (or higher)
